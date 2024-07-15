@@ -21,7 +21,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
   late TimeOfDay _startTime;
   late TimeOfDay _endTime;
   late bool _isCompleted;
-  final FirestoreService _firestoreService = FirestoreService();
+  final FirestoreService _fireStoreService = FirestoreService();
 
   @override
   void initState() {
@@ -47,7 +47,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chỉnh sửa công việc'),
+        title: const Text('EditTask'),
       ),
       body: Form(
         key: _formKey,
@@ -58,32 +58,32 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
             children: [
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Tiêu đề'),
+                decoration: const InputDecoration(labelText: 'Title'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Vui lòng nhập tiêu đề';
+                    return 'Please enter your title';
                   }
                   return null;
                 },
               ),
               TextFormField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(labelText: 'Mô tả'),
+                decoration: const InputDecoration(labelText: 'Description'),
               ),
               ListTile(
                 title: Text(
-                    'Ngày thực hiện: ${DateFormat('dd/MM/yyyy').format(_selectedExecutionDate)}'),
+                    'Execution: ${DateFormat('dd/MM/yyyy').format(_selectedExecutionDate)}'),
                 trailing: const Icon(Icons.calendar_today),
                 onTap: _presentDatePickerExecution,
               ),
               ListTile(
                 title: Text(
-                    'Hạn chót: ${DateFormat('dd/MM/yyyy').format(_selectedDueDate)}'),
+                    'DueDate: ${DateFormat('dd/MM/yyyy').format(_selectedDueDate)}'),
                 trailing: const Icon(Icons.calendar_today),
                 onTap: _presentDatePickerDue,
               ),
               ListTile(
-                title: const Text('Giờ bắt đầu thông báo:'),
+                title: const Text('Start time:'),
                 trailing: Text(_startTime.format(context)),
                 onTap: () async {
                   final TimeOfDay? pickedTime = await showTimePicker(
@@ -98,7 +98,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                 },
               ),
               ListTile(
-                title: const Text('Giờ kết thúc thông báo:'),
+                title: const Text('End time'),
                 trailing: Text(_endTime.format(context)),
                 onTap: () async {
                   final TimeOfDay? pickedTime = await showTimePicker(
@@ -113,7 +113,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                 },
               ),
               CheckboxListTile(
-                title: const Text('Đã hoàn thành'),
+                title: const Text('Completed'),
                 value: _isCompleted,
                 onChanged: (value) {
                   setState(() {
@@ -128,7 +128,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                       _updateTask();
                     }
                   },
-                  child: const Text('Lưu'),
+                  child: const Text('Save'),
                 ),
               ),
             ],
@@ -177,9 +177,9 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
       endTime: _endTime,
       isCompleted: _isCompleted,
     );
-    await _firestoreService.updateTask(updatedTask);
+    await _fireStoreService.updateTask(updatedTask);
     if (mounted) {
-      Navigator.pop(context); // Quay lại màn hình danh sách công việc
+      Navigator.pop(context); // Q
     }
   }
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -19,8 +20,8 @@ class NotificationService {
 
   static Future<void> showNotification(
       int id, String title, String body, DateTime scheduledDate) async {
-    print('Lên lịch thông báo với ID:$id');
-    print('Thời gian lên lịch: $scheduledDate');
+    debugPrint('schedule notify with ID:$id');
+    debugPrint('schedule time : $scheduledDate');
     await _notificationsPlugin.zonedSchedule(
       id,
       title,
@@ -29,10 +30,9 @@ class NotificationService {
           scheduledDate, tz.local), // Chuyển đổi DateTime thành TZDateTime
       const NotificationDetails(
         android: AndroidNotificationDetails(
-          'my_app_notification_channel', // ID kênh
-          'Thông báo ứng dụngcủa tôi', // Tên kênh
-          channelDescription:
-              'Thông báo về các sự kiện và cập nhật quan trọng', //
+          'my_app_notification_channel', // channel ID
+          'my notify app', // chanel name
+          channelDescription: 'notify event and update',
           importance: Importance.max,
           priority: Priority.high,
         ),
@@ -44,7 +44,7 @@ class NotificationService {
   }
 
   static Future<void> cancelNotification(int id) async {
-    // Hủy thông báo
+    // cancel notify
     await _notificationsPlugin.cancel(id);
   }
 }

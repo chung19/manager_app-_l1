@@ -8,26 +8,26 @@ import 'add_new_task.dart';
 import 'edit_task.dart';
 
 class TaskListScreen extends StatefulWidget {
-  const TaskListScreen({Key? key}) : super(key: key);
+  const TaskListScreen({super.key});
 
   @override
   State<TaskListScreen> createState() => _TaskListScreenState();
 }
 
 class _TaskListScreenState extends State<TaskListScreen> {
-  final FirestoreService _firestoreService = FirestoreService();
+  final FirestoreService _fireStoreService = FirestoreService();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Danh sách công việc'),
+        title: const Center(child: Text('Task List')),
       ),
       body: StreamBuilder<List<Task>>(
-        stream: _firestoreService.getTasks(),
+        stream: _fireStoreService.getTasks(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return Center(child: Text('Lỗi: ${snapshot.error}'));
+            return Center(child: Text('Error: ${snapshot.error}'));
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -43,8 +43,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
               return ListTile(
                 title: Text(task.title),
                 subtitle: Text(
-                  'Hạn chót: ${DateFormat('dd/MM/yyyy').format(task.dueDate)}\n'
-                  'Từ: ${task.startTime?.format(context)} - Đến: ${task.endTime?.format(context)}',
+                  'Execution: ${DateFormat('dd/MM/yyyy').format(task.executionDate)}\n'
+                  'DueDate: ${DateFormat('dd/MM/yyyy').format(task.dueDate)}\n'
+                  'Start: ${task.startTime?.format(context)} - End: ${task.endTime?.format(context)}',
                 ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -89,7 +90,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Future<void> _toggleTaskCompletion(Task task, bool isCompleted) async {
-    await _firestoreService.updateTask(task.copyWith(isCompleted: isCompleted));
+    await _fireStoreService.updateTask(task.copyWith(isCompleted: isCompleted));
 
     if (isCompleted) {
       await NotificationService.cancelNotification(task.id.hashCode);
@@ -113,16 +114,16 @@ class _TaskListScreenState extends State<TaskListScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Xác nhận xóa'),
-          content: const Text('Bạn có chắc chắn muốn xóa công việc này?'),
+          title: const Text('Delete Confirmation'),
+          content: const Text('Do you want to delete'),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Hủy'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Xóa'),
+              child: const Text('Delete'),
             ),
           ],
         );
@@ -130,7 +131,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
     );
 
     if (confirmDelete == true) {
-      await _firestoreService.deleteTask(taskId);
+      await _fireStoreService.deleteTask(taskId);
       await NotificationService.cancelNotification(taskId.hashCode);
     }
   }

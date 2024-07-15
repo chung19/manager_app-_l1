@@ -6,7 +6,7 @@ import '../../data/services/notification_service.dart';
 import '../../data/task.dart';
 
 class AddTaskScreen extends StatefulWidget {
-  const AddTaskScreen({Key? key}) : super(key: key);
+  const AddTaskScreen({super.key});
 
   @override
   State<AddTaskScreen> createState() => _AddTaskScreenState();
@@ -21,7 +21,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   TimeOfDay _startTime = TimeOfDay.now();
   TimeOfDay _endTime = TimeOfDay.now();
   bool _isCompleted = false;
-  final FirestoreService _firestoreService = FirestoreService();
+  final FirestoreService _firesStoreService = FirestoreService();
 
   @override
   void dispose() {
@@ -34,7 +34,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Thêm công việc'),
+        title: const Text('Add Task'),
       ),
       body: SingleChildScrollView(
         child: SizedBox(
@@ -54,10 +54,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           TextFormField(
                             controller: _titleController,
                             decoration:
-                                const InputDecoration(labelText: 'Tiêu đề'),
+                                const InputDecoration(labelText: 'Title'),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Vui lòng nhập tiêu đề';
+                                return 'Please enter a title';
                               }
                               return null;
                             },
@@ -65,7 +65,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           TextFormField(
                             controller: _descriptionController,
                             decoration:
-                                const InputDecoration(labelText: 'Mô tả'),
+                                const InputDecoration(labelText: 'Description'),
                           ),
                         ],
                       ),
@@ -78,18 +78,18 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         children: [
                           ListTile(
                             title: Text(
-                                'Ngày thực hiện: ${DateFormat('dd/MM/yyyy').format(_selectedExecutionDate)}'),
+                                'Execution: ${DateFormat('dd/MM/yyyy').format(_selectedExecutionDate)}'),
                             trailing: const Icon(Icons.calendar_today),
                             onTap: _presentDatePickerExecution,
                           ),
                           ListTile(
                             title: Text(
-                                'Hạn chót: ${DateFormat('dd/MM/yyyy').format(_selectedDueDate)}'),
+                                'DueDate: ${DateFormat('dd/MM/yyyy').format(_selectedDueDate)}'),
                             trailing: const Icon(Icons.calendar_today),
                             onTap: _presentDatePickerDue,
                           ),
                           ListTile(
-                            title: const Text('Giờ bắt đầu thông báo:'),
+                            title: const Text('Start time :'),
                             trailing: Text(_startTime.format(context)),
                             onTap: () async {
                               final TimeOfDay? pickedTime =
@@ -105,7 +105,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                             },
                           ),
                           ListTile(
-                            title: const Text('Giờ kết thúc thông báo:'),
+                            title: const Text('End Time:'),
                             trailing: Text(_endTime.format(context)),
                             onTap: () async {
                               final TimeOfDay? pickedTime =
@@ -121,7 +121,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                             },
                           ),
                           CheckboxListTile(
-                            title: const Text('Đã hoàn thành'),
+                            title: const Text('Completed'),
                             value: _isCompleted,
                             onChanged: (value) {
                               setState(() {
@@ -136,7 +136,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                   _addTask();
                                 }
                               },
-                              child: const Text('Lưu'),
+                              child: const Text('Save'),
                             ),
                           ),
                         ],
@@ -192,7 +192,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       endTime: _endTime,
       isCompleted: _isCompleted,
     );
-    await _firestoreService.addTask(newTask);
+    await _firesStoreService.addTask(newTask);
     // Lên lịch thông báo
     await NotificationService.showNotification(
       newTask.id.hashCode,
