@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:timezone/data/latest.dart' as tz;
 
 import '../../data/services/fire_store_service.dart';
 import '../../data/services/notification_service.dart';
@@ -15,6 +16,12 @@ class TaskListScreen extends StatefulWidget {
 }
 
 class _TaskListScreenState extends State<TaskListScreen> {
+  @override
+  void initState() {
+    tz.initializeTimeZones();
+    super.initState();
+  }
+
   final FirestoreService _fireStoreService = FirestoreService();
 
   @override
@@ -41,12 +48,16 @@ class _TaskListScreenState extends State<TaskListScreen> {
             itemBuilder: (context, index) {
               Task task = tasks[index];
               return ListTile(
-                title: Text(task.title),
-                subtitle: Text(
-                  'Execution: ${DateFormat('dd/MM/yyyy').format(task.executionDate)}\n'
-                  'DueDate: ${DateFormat('dd/MM/yyyy').format(task.dueDate)}\n'
-                  'Start: ${task.startTime?.format(context)} - End: ${task.endTime?.format(context)}',
+                title: Column(
+                  children: [
+                    Text('Task:${task.title}'),
+                    Text('Description:${task.description}'),
+                  ],
                 ),
+                subtitle: Text(
+                    'Execution: ${DateFormat('dd/MM/yyyy').format(task.executionDate)}\n'
+                    '''
+Start Time: ${task.startTime?.format(context)}'''),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -61,6 +72,47 @@ class _TaskListScreenState extends State<TaskListScreen> {
                       onPressed: () {
                         _showDeleteConfirmationDialog(task.id);
                       },
+                    ),
+                    ElevatedButton.icon(
+                      icon: Icon(Icons.notifications_outlined),
+                      onPressed: () async {
+                        // Hiển thị DatePicker để chọn ngày
+                        DateTime? pickedDate = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime(2000, 1, 1),
+                          lastDate: DateTime(2099, 1, 1),
+                        );
+
+                        if (pickedDate != null) {
+                          // Hiển thị TimePicker để chọn thời gian
+                          TimeOfDay? pickedTime = await showTimePicker(
+                            context: context,
+                            initialTime: TimeOfDay.now(),
+                          );
+
+                          if (pickedTime != null) {
+                            // Kết hợp ngày và thời gian
+                            DateTime scheduledDateTime = DateTime(
+                              pickedDate.year,
+                              pickedDate.month,
+                              pickedDate.day,
+                              pickedTime.hour,
+                              pickedTime.minute,
+                            );
+
+                            // Lập lịch thông báo
+                            await LocalNotifications.showScheduleNotification(
+                              id: task.id.hashCode,
+                              title: task.title,
+                              body: task.description,
+                              payload: "This is schedule data",
+                              scheduledNotificationDateTime: scheduledDateTime,
+                            );
+                          }
+                        }
+                      },
+                      label: Text("schedule"),
                     ),
                   ],
                 ),
@@ -93,19 +145,20 @@ class _TaskListScreenState extends State<TaskListScreen> {
     await _fireStoreService.updateTask(task.copyWith(isCompleted: isCompleted));
 
     if (isCompleted) {
-      await NotificationService.cancelNotification(task.id.hashCode);
+      await LocalNotifications.cancel(task.id.hashCode);
     } else {
-      await NotificationService.showNotification(
-          task.id.hashCode,
-          task.title,
-          task.description,
-          DateTime(
-            task.dueDate.year,
-            task.dueDate.month,
-            task.dueDate.day,
-            task.startTime!.hour,
-            task.startTime!.minute,
-          ));
+      await LocalNotifications.showScheduleNotification(
+        id: task.id.hashCode,
+        title: task.title,
+        body: task.description,
+        scheduledNotificationDateTime: DateTime(
+          task.executionDate.year,
+          task.executionDate.month,
+          task.executionDate.day,
+          task.startTime.hour,
+          task.startTime.minute,
+        ),
+      );
     }
   }
 
@@ -132,7 +185,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
     if (confirmDelete == true) {
       await _fireStoreService.deleteTask(taskId);
-      await NotificationService.cancelNotification(taskId.hashCode);
+      await LocalNotifications.cancelAll();
     }
   }
 }

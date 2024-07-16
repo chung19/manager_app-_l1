@@ -17,9 +17,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
   late DateTime _selectedExecutionDate;
-  late DateTime _selectedDueDate;
   late TimeOfDay _startTime;
-  late TimeOfDay _endTime;
   late bool _isCompleted;
   final FirestoreService _fireStoreService = FirestoreService();
 
@@ -30,9 +28,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     _descriptionController =
         TextEditingController(text: widget.task.description);
     _selectedExecutionDate = widget.task.executionDate;
-    _selectedDueDate = widget.task.dueDate;
     _startTime = widget.task.startTime!;
-    _endTime = widget.task.endTime!;
     _isCompleted = widget.task.isCompleted;
   }
 
@@ -77,12 +73,6 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                 onTap: _presentDatePickerExecution,
               ),
               ListTile(
-                title: Text(
-                    'DueDate: ${DateFormat('dd/MM/yyyy').format(_selectedDueDate)}'),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: _presentDatePickerDue,
-              ),
-              ListTile(
                 title: const Text('Start time:'),
                 trailing: Text(_startTime.format(context)),
                 onTap: () async {
@@ -93,21 +83,6 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                   if (pickedTime != null) {
                     setState(() {
                       _startTime = pickedTime;
-                    });
-                  }
-                },
-              ),
-              ListTile(
-                title: const Text('End time'),
-                trailing: Text(_endTime.format(context)),
-                onTap: () async {
-                  final TimeOfDay? pickedTime = await showTimePicker(
-                    context: context,
-                    initialTime: _endTime,
-                  );
-                  if (pickedTime != null) {
-                    setState(() {
-                      _endTime = pickedTime;
                     });
                   }
                 },
@@ -155,14 +130,11 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
   void _presentDatePickerDue() {
     showDatePicker(
       context: context,
-      initialDate: _selectedDueDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     ).then((pickedDate) {
       if (pickedDate == null) return;
-      setState(() {
-        _selectedDueDate = pickedDate;
-      });
+      setState(() {});
     });
   }
 
@@ -172,9 +144,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
       title: _titleController.text,
       description: _descriptionController.text,
       executionDate: _selectedExecutionDate,
-      dueDate: _selectedDueDate,
       startTime: _startTime,
-      endTime: _endTime,
       isCompleted: _isCompleted,
     );
     await _fireStoreService.updateTask(updatedTask);

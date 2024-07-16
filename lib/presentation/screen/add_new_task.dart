@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:timezone/data/latest.dart' as tz;
 
 import '../../data/services/fire_store_service.dart';
 import '../../data/services/notification_service.dart';
@@ -17,11 +18,15 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   DateTime _selectedExecutionDate = DateTime.now();
-  DateTime _selectedDueDate = DateTime.now();
   TimeOfDay _startTime = TimeOfDay.now();
-  TimeOfDay _endTime = TimeOfDay.now();
   bool _isCompleted = false;
   final FirestoreService _firesStoreService = FirestoreService();
+  @override
+  void initState() {
+    tz.initializeTimeZones();
+    LocalNotifications.init();
+    super.initState();
+  }
 
   @override
   void dispose() {
@@ -83,12 +88,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                             onTap: _presentDatePickerExecution,
                           ),
                           ListTile(
-                            title: Text(
-                                'DueDate: ${DateFormat('dd/MM/yyyy').format(_selectedDueDate)}'),
-                            trailing: const Icon(Icons.calendar_today),
-                            onTap: _presentDatePickerDue,
-                          ),
-                          ListTile(
                             title: const Text('Start time :'),
                             trailing: Text(_startTime.format(context)),
                             onTap: () async {
@@ -100,22 +99,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                               if (pickedTime != null) {
                                 setState(() {
                                   _startTime = pickedTime;
-                                });
-                              }
-                            },
-                          ),
-                          ListTile(
-                            title: const Text('End Time:'),
-                            trailing: Text(_endTime.format(context)),
-                            onTap: () async {
-                              final TimeOfDay? pickedTime =
-                                  await showTimePicker(
-                                context: context,
-                                initialTime: _endTime,
-                              );
-                              if (pickedTime != null) {
-                                setState(() {
-                                  _endTime = pickedTime;
                                 });
                               }
                             },
@@ -155,9 +138,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   void _presentDatePickerExecution() {
     showDatePicker(
       context: context,
-      initialDate: _selectedExecutionDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000, 1, 1),
+      lastDate: DateTime(2099, 1, 1),
     ).then((pickedDate) {
       if (pickedDate == null) return;
       setState(() {
@@ -166,48 +149,57 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     });
   }
 
-  void _presentDatePickerDue() {
-    showDatePicker(
-      context: context,
-      initialDate: _selectedDueDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    ).then((pickedDate) {
-      if (pickedDate == null) return;
-      setState(() {
-        _selectedDueDate = pickedDate;
-      });
-    });
-  }
-
   Future<void> _addTask() async {
+    debugPrint("1 xyz");
     final newTask = Task(
       id: '',
-      // FireStore auto create id
       title: _titleController.text,
       description: _descriptionController.text,
       executionDate: _selectedExecutionDate,
-      dueDate: _selectedDueDate,
       startTime: _startTime,
-      endTime: _endTime,
       isCompleted: _isCompleted,
     );
-    await _firesStoreService.addTask(newTask);
-    // Lên lịch thông báo
-    await NotificationService.showNotification(
-      newTask.id.hashCode,
-      newTask.title,
-      newTask.description,
-      DateTime(
-        newTask.dueDate.year,
-        newTask.dueDate.month,
-        newTask.dueDate.day,
-        newTask.startTime!.hour,
-        newTask.startTime!.minute,
-      ),
+    debugPrint("2 xyz");
+    DateTime scheduledDateTime = DateTime(
+      _selectedExecutionDate.year,
+      _selectedExecutionDate.month,
+      _selectedExecutionDate.day,
+      _startTime.hour,
+      _startTime.minute,
     );
-    if (mounted) {
-      Navigator.pop(context); // Quay lại màn hình danh sách công việc
+    debugPrint("3 xyz");
+    debugPrint("Scheduling notification for ${scheduledDateTime.toString()}");
+    if (scheduledDateTime.isBefore(DateTime.now())) {
+      // Hiển thị thông báo lỗi
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a time in the future')),
+      );
+      return;
+    }
+
+    try {
+      await _firesStoreService.addTask(newTask);
+      debugPrint("Task added successfully");
+    } catch (e) {
+      debugPrint("Error adding task: $e");
+    }
+
+    // Lên lịch thông báo
+    debugPrint("4 xyz");
+    try {
+      await LocalNotifications.showScheduleNotification(
+        id: newTask.id.hashCode,
+        title: newTask.title,
+        body: newTask.description,
+        payload: "This is schedule data",
+        scheduledNotificationDateTime: scheduledDateTime,
+      );
+      debugPrint("5 xyz");
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      debugPrint("Error scheduling notification: $e");
     }
   }
 }

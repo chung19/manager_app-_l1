@@ -10,7 +10,7 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  await NotificationService.initialize(); //
+  await LocalNotifications.init(); //
   runApp(MyApp());
 }
 

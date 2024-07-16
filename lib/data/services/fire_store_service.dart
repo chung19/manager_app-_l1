@@ -7,35 +7,38 @@ class FirestoreService {
       FirebaseFirestore.instance.collection('tasks');
 
   Future<void> addTask(Task task) async {
-    await _tasksCollection.add({
-      'title': task.title,
-      'description': task.description,
-      'startTime': {
-        'hour': task.startTime?.hour,
-        'minute': task.startTime?.minute,
-      },
-      'endTime': {
-        'hour': task.endTime?.hour,
-        'minute': task.endTime?.minute,
-      },
-      'executionDate': task.executionDate,
-      'dueDate': task.dueDate,
-      'isCompleted': task.isCompleted,
-    });
+    debugPrint("Adding task to Firestore... 7 xyz ");
+    try {
+      await _tasksCollection.add({
+        'title': task.title,
+        'description': task.description,
+        'startTime': Timestamp.fromDate(DateTime(
+          task.executionDate.year,
+          task.executionDate.month,
+          task.executionDate.day,
+          task.startTime?.hour ?? 0,
+          task.startTime?.minute ?? 0,
+        )),
+        'executionDate': task.executionDate,
+        'isCompleted': task.isCompleted,
+      });
+      debugPrint("Task added successfully! 8 xyz");
+    } catch (e) {
+      debugPrint("Error adding task: $e xyz");
+    }
   }
 
   Stream<List<Task>> getTasks() {
     return _tasksCollection.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        TimeOfDay? startTime = _convertToTimeOfDay(data['startTime']);
         return Task(
           id: doc.id,
           title: data['title'],
           description: data['description'],
-          startTime: _convertToTimeOfDay(data['startTime'])!,
-          endTime: _convertToTimeOfDay(data['endTime'])!,
+          startTime: startTime!,
           executionDate: (data['executionDate'] as Timestamp).toDate(),
-          dueDate: (data['dueDate'] as Timestamp).toDate(),
           isCompleted: data['isCompleted'],
         );
       }).toList();
@@ -46,13 +49,14 @@ class FirestoreService {
     await _tasksCollection.doc(task.id).update({
       'title': task.title,
       'description': task.description,
-      'startTime': {
-        'hour': task.startTime?.hour,
-        'minute': task.startTime?.minute
-      },
-      'endTime': {'hour': task.endTime?.hour, 'minute': task.endTime?.minute},
+      'startTime': Timestamp.fromDate(DateTime(
+        task.executionDate.year,
+        task.executionDate.month,
+        task.executionDate.day,
+        task.startTime?.hour ?? 0,
+        task.startTime?.minute ?? 0,
+      )),
       'executionDate': task.executionDate,
-      'dueDate': task.dueDate,
       'isCompleted': task.isCompleted,
     });
   }
@@ -62,8 +66,11 @@ class FirestoreService {
   }
 
   TimeOfDay? _convertToTimeOfDay(dynamic data) {
-    if (data is Map) {
-      return TimeOfDay(hour: data['hour'], minute: data['minute']);
+    if (data is Timestamp) {
+      DateTime dateTime = data.toDate();
+      return TimeOfDay(hour: dateTime.hour, minute: dateTime.minute);
+    } else if (data is DateTime) {
+      return TimeOfDay(hour: data.hour, minute: data.minute);
     }
     return null;
   }
