@@ -7,7 +7,6 @@ class FirestoreService {
       FirebaseFirestore.instance.collection('tasks');
 
   Future<void> addTask(Task task) async {
-    debugPrint("Adding task to Firestore... 7 xyz ");
     try {
       await _tasksCollection.add({
         'title': task.title,
@@ -16,13 +15,12 @@ class FirestoreService {
           task.executionDate.year,
           task.executionDate.month,
           task.executionDate.day,
-          task.startTime?.hour ?? 0,
-          task.startTime?.minute ?? 0,
+          task.startTime.hour,
+          task.startTime.minute,
         )),
         'executionDate': task.executionDate,
         'isCompleted': task.isCompleted,
       });
-      debugPrint("Task added successfully! 8 xyz");
     } catch (e) {
       debugPrint("Error adding task: $e xyz");
     }
@@ -53,8 +51,8 @@ class FirestoreService {
         task.executionDate.year,
         task.executionDate.month,
         task.executionDate.day,
-        task.startTime?.hour ?? 0,
-        task.startTime?.minute ?? 0,
+        task.startTime.hour,
+        task.startTime.minute,
       )),
       'executionDate': task.executionDate,
       'isCompleted': task.isCompleted,

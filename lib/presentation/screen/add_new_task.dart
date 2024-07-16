@@ -139,8 +139,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     showDatePicker(
       context: context,
       initialDate: DateTime.now(),
-      firstDate: DateTime(2000, 1, 1),
-      lastDate: DateTime(2099, 1, 1),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
     ).then((pickedDate) {
       if (pickedDate == null) return;
       setState(() {
@@ -150,7 +150,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   }
 
   Future<void> _addTask() async {
-    debugPrint("1 xyz");
     final newTask = Task(
       id: '',
       title: _titleController.text,
@@ -159,7 +158,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       startTime: _startTime,
       isCompleted: _isCompleted,
     );
-    debugPrint("2 xyz");
     DateTime scheduledDateTime = DateTime(
       _selectedExecutionDate.year,
       _selectedExecutionDate.month,
@@ -167,7 +165,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       _startTime.hour,
       _startTime.minute,
     );
-    debugPrint("3 xyz");
     debugPrint("Scheduling notification for ${scheduledDateTime.toString()}");
     if (scheduledDateTime.isBefore(DateTime.now())) {
       // Hiển thị thông báo lỗi
@@ -179,13 +176,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
     try {
       await _firesStoreService.addTask(newTask);
-      debugPrint("Task added successfully");
     } catch (e) {
       debugPrint("Error adding task: $e");
     }
-
-    // Lên lịch thông báo
-    debugPrint("4 xyz");
+    // schedule notify the task
     try {
       await LocalNotifications.showScheduleNotification(
         id: newTask.id.hashCode,
@@ -194,9 +188,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         payload: "This is schedule data",
         scheduledNotificationDateTime: scheduledDateTime,
       );
-      debugPrint("5 xyz");
       if (mounted) {
         Navigator.pop(context);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('successfully add task  ')),
+        );
       }
     } catch (e) {
       debugPrint("Error scheduling notification: $e");

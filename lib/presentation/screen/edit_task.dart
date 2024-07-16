@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../data/services/fire_store_service.dart';
+import '../../data/services/notification_service.dart';
 import '../../data/task.dart';
 
 class EditTaskScreen extends StatefulWidget {
@@ -127,17 +128,6 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     });
   }
 
-  void _presentDatePickerDue() {
-    showDatePicker(
-      context: context,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    ).then((pickedDate) {
-      if (pickedDate == null) return;
-      setState(() {});
-    });
-  }
-
   Future<void> _updateTask() async {
     final updatedTask = Task(
       id: widget.task.id,
@@ -147,9 +137,39 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
       startTime: _startTime,
       isCompleted: _isCompleted,
     );
-    await _fireStoreService.updateTask(updatedTask);
-    if (mounted) {
-      Navigator.pop(context); // Q
+
+    DateTime scheduledDateTime = DateTime(
+      _selectedExecutionDate.year,
+      _selectedExecutionDate.month,
+      _selectedExecutionDate.day,
+      _startTime.hour,
+      _startTime.minute,
+    );
+    debugPrint("Scheduling notification for ${scheduledDateTime.toString()}");
+    if (scheduledDateTime.isBefore(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a time in the future')),
+      );
+      return;
+    }
+    try {
+      await _fireStoreService.updateTask(updatedTask);
+      await LocalNotifications.showScheduleNotification(
+        id: updatedTask.id.hashCode,
+        title: updatedTask.title,
+        body: updatedTask.description,
+        payload: "This is schedule data",
+        scheduledNotificationDateTime: scheduledDateTime,
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('successfully update')),
+        );
+      }
+    } catch (e) {
+      debugPrint("Error updating task or scheduling notification: $e");
     }
   }
 }
