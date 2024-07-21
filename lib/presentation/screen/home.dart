@@ -28,6 +28,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.blueAccent,
         title: const Center(child: Text('Task List')),
       ),
       body: StreamBuilder<List<Task>>(
@@ -47,83 +48,93 @@ class _TaskListScreenState extends State<TaskListScreen> {
             itemCount: tasks.length,
             itemBuilder: (context, index) {
               Task task = tasks[index];
-              return ListTile(
-                title: Column(
-                  children: [
-                    Text('Task:${task.title}'),
-                    Text('Description:${task.description}'),
-                  ],
-                ),
-                subtitle: Text(
-                    'Execution: ${DateFormat('dd/MM/yyyy').format(task.executionDate)}\n'
-                    '''
-Start Time: ${task.startTime?.format(context)}'''),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Checkbox(
-                      value: task.isCompleted,
-                      onChanged: (value) {
-                        _toggleTaskCompletion(task, value!);
-                      },
+              return Card(
+                elevation: 5,
+                shadowColor: Colors.grey,
+                child: Container(
+                  padding: const EdgeInsets.all(5),
+                  child: ListTile(
+                    title: Text(task.title),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(task.description ?? ''),
+                        const SizedBox(height: 8),
+                        Text(
+                            'Execution Date: ${DateFormat('dd/MM/yyyy').format(task.executionDate)}'),
+                        Text('Start Time: ${task.startTime?.format(context)}'),
+                      ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () {
-                        _showDeleteConfirmationDialog(task.id);
-                      },
-                    ),
-                    ElevatedButton.icon(
-                      icon: Icon(Icons.notifications_outlined),
-                      onPressed: () async {
-                        // Hiển thị DatePicker để chọn ngày
-                        DateTime? pickedDate = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime(2000, 1, 1),
-                          lastDate: DateTime(2099, 1, 1),
-                        );
-
-                        if (pickedDate != null) {
-                          // Hiển thị TimePicker để chọn thời gian
-                          TimeOfDay? pickedTime = await showTimePicker(
-                            context: context,
-                            initialTime: TimeOfDay.now(),
-                          );
-
-                          if (pickedTime != null) {
-                            // Kết hợp ngày và thời gian
-                            DateTime scheduledDateTime = DateTime(
-                              pickedDate.year,
-                              pickedDate.month,
-                              pickedDate.day,
-                              pickedTime.hour,
-                              pickedTime.minute,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Checkbox(
+                          value: task.isCompleted,
+                          onChanged: (value) {
+                            _toggleTaskCompletion(task, value!);
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () {
+                            _showDeleteConfirmationDialog(task.id);
+                          },
+                        ),
+                        ElevatedButton.icon(
+                          icon: Icon(Icons.notifications_outlined),
+                          onPressed: () async {
+                            // Hiển thị DatePicker để chọn ngày
+                            DateTime? pickedDate = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: DateTime(2000, 1, 1),
+                              lastDate: DateTime(2099, 1, 1),
                             );
 
-                            // Lập lịch thông báo
-                            await LocalNotifications.showScheduleNotification(
-                              id: task.id.hashCode,
-                              title: task.title,
-                              body: task.description,
-                              payload: "This is schedule data",
-                              scheduledNotificationDateTime: scheduledDateTime,
-                            );
-                          }
-                        }
-                      },
-                      label: Text("schedule"),
+                            if (pickedDate != null) {
+                              // show TimePicker for pick times
+                              TimeOfDay? pickedTime = await showTimePicker(
+                                context: context,
+                                initialTime: TimeOfDay.now(),
+                              );
+
+                              if (pickedTime != null) {
+                                //mix date and time
+                                DateTime scheduledDateTime = DateTime(
+                                  pickedDate.year,
+                                  pickedDate.month,
+                                  pickedDate.day,
+                                  pickedTime.hour,
+                                  pickedTime.minute,
+                                );
+
+                                // schedule notify
+                                await LocalNotifications
+                                    .showScheduleNotification(
+                                  id: task.id.hashCode,
+                                  title: task.title,
+                                  body: task.description,
+                                  payload: "This is schedule data",
+                                  scheduledNotificationDateTime:
+                                      scheduledDateTime,
+                                );
+                              }
+                            }
+                          },
+                          label: Text("schedule"),
+                        ),
+                      ],
                     ),
-                  ],
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditTaskScreen(task: task),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => EditTaskScreen(task: task),
-                    ),
-                  );
-                },
               );
             },
           );

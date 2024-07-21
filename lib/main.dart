@@ -11,7 +11,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   await LocalNotifications.init(); //
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -19,7 +19,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-        debugShowCheckedModeBanner: false, home: TaskListScreen());
+    return MaterialApp(
+        theme: ThemeData(primarySwatch: Colors.cyan),
+        debugShowCheckedModeBanner: false,
+        home: TaskListScreen());
   }
 }
